@@ -1,0 +1,44 @@
+{
+  "private": true,
+  "name": "pintura-example-cordova",
+  "version": "0.0.0",
+  "author": "Rik Schennink at PQINA",
+  "license": "https://pqina.nl/pintura/license/",
+  "homepage": "https://pqina.nl/pintura/",
+  "description": "A Pintura Cordova Example Project",
+  "displayName": "HelloCordova",
+  "main": "index.js",
+  "scripts": {
+    "cordova": "cordova",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "cp -rf node_modules/@pqina/pintura www/pintura"
+  },
+  "keywords": [
+    "ecosystem:cordova"
+  ],
+  "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "cordova": "^10.0.0",
+    "cordova-android": "^10.1.2",
+    "cordova-ios": "^6.2.0",
+    "cordova-plugin-camera": "^6.0.0",
+    "cordova-plugin-file": "^7.0.0",
+    "cordova-plugin-wkwebview-file-xhr": "^3.1.0"
+  },
+  "cordova": {
+    "plugins": {
+      "cordova-plugin-file": {},
+      "cordova-plugin-wkwebview-file-xhr": {},
+      "cordova-plugin-camera": {
+        "ANDROIDX_CORE_VERSION": "1.6.+"
+      }
+    },
+    "platforms": [
+      "ios",
+      "android"
+    ]
+  },
+  "dependencies": {
+    "@pqina/pintura": "^8.x"
+  }
+}
