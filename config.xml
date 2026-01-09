@@ -21,6 +21,7 @@
         <preference name="AndroidPersistentFileLocation" value="Compatibility" />
     </platform>
     <platform name="ios">
+        <preference name="AllowInlineMediaPlayback" value="true"/>
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
     </platform>

@@ -21,6 +21,19 @@
 // See https://cordova.apache.org/docs/en/latest/cordova/events/events.html#deviceready
 document.addEventListener('deviceready', onDeviceReady, false);
 
+let log = console.log;
+let logs = [];
+console.log = (...args) => {
+    log(...args);
+
+    logs.unshift(args);
+    logs.length = 10;
+
+    document.getElementById('dev').innerHTML = logs
+        .map((obj) => `<li>${JSON.stringify(obj)}</li>`)
+        .join('');
+};
+
 function onDeviceReady() {
     // Cordova is now initialized. Have fun!
 
@@ -114,7 +127,7 @@ function setupEventHandlers() {
 
                 console.log('success blob', blob);
 
-                editImage(blob);
+                editMedia(blob);
             },
             (err) => {
                 console.log('error', err);
@@ -125,6 +138,62 @@ function setupEventHandlers() {
                 encodingType: Camera.EncodingType.JPEG,
                 destinationType: Camera.DestinationType.DATA_URL,
                 sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+            }
+        );
+    });
+
+    document.querySelector('.library-video').addEventListener('click', () => {
+        // cordova.plugins.diagnostic.requestCameraRollAuthorization(
+        //     () => {
+        //         console.log('requestCameraRollAuthorization success');
+        //     },
+        //     () => {
+        //         console.log('requestCameraRollAuthorization error');
+        //     }
+        // );
+
+        console.log('Select video from photo library');
+
+        navigator.camera.getPicture(
+            (url) => {
+                console.log('success url', url);
+
+                editMedia(url);
+            },
+            (err) => {
+                console.log('error', err);
+            },
+            {
+                quality: 50,
+                mediaType: Camera.MediaType.VIDEO,
+                sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+            }
+        );
+    });
+
+    document.querySelector('.camera-video').addEventListener('click', () => {
+        console.log('Select video from camera');
+
+        // cordova.plugins.diagnostic.requestCameraAuthorization(
+        //     () => {
+        //         console.log('requestCameraAuthorization success');
+        //     },
+        //     () => {
+        //         console.log('requestCameraAuthorization error');
+        //     }
+        // );
+
+        navigator.camera.getPicture(
+            (url) => {
+                editMedia(url);
+            },
+            (err) => {
+                console.log('error', err);
+            },
+            {
+                quality: 50,
+                mediaType: Camera.MediaType.VIDEO,
+                sourceType: Camera.PictureSourceType.CAMERA,
             }
         );
     });
@@ -153,7 +222,7 @@ function setupEventHandlers() {
 
                 console.log('success blob', blob);
 
-                editImage(blob);
+                editMedia(blob);
             },
             (err) => {
                 console.log('error', err);
@@ -169,7 +238,11 @@ function setupEventHandlers() {
     });
 
     document.querySelector('.local-image').addEventListener('click', () => {
-        editImage('./image.jpeg');
+        editMedia('./image.jpeg');
+    });
+
+    document.querySelector('.local-video').addEventListener('click', () => {
+        editMedia('./video.mp4');
     });
 
     console.log('Awaiting interaction');
@@ -190,10 +263,37 @@ function setupEventHandlers() {
     //     });
 }
 
-const editImage = (src) => {
-    const { openDefaultEditor } = window.pintura;
+const editMedia = (src) => {
+    if (!window.pintura) {
+        console.log("Can't find Pintura global variable");
+        return;
+    }
+
+    // image editor
+    const {
+        setPlugins,
+        openDefaultEditor,
+        createDefaultMediaWriter,
+        createDefaultImageWriter,
+        imageStateToCanvas,
+    } = window.pintura;
+
+    // video editor
+    if (!window.pinturavideo) {
+        console.log("Can't find Pintura video extension global variable");
+        return;
+    }
+    const {
+        plugin_trim,
+        plugin_trim_locale_en_gb,
+        createDefaultVideoWriter,
+        createMediaStreamEncoder,
+    } = window.pinturavideo;
 
     console.log('Opening editor');
+
+    // Load the Trim plugin
+    setPlugins(plugin_trim);
 
     const editor = openDefaultEditor({
         src,
@@ -201,9 +301,34 @@ const editImage = (src) => {
         // set these to false as only needed in Safari browser
         preventScrollBodyIfNeeded: false,
         preventFooterOverlapIfNeeded: false,
+
+        locale: {
+            // add trim locale
+            ...plugin_trim_locale_en_gb,
+        },
+
+        // here we supply two video writers
+        imageWriter: createDefaultMediaWriter(
+            {
+                // Generic options writer options
+            },
+            [
+                // Writing images
+                createDefaultImageWriter(),
+
+                // Basic Media stream encoder for videos, see docs for better setups
+                createDefaultVideoWriter({
+                    encoder: createMediaStreamEncoder({
+                        imageStateToCanvas,
+                    }),
+                }),
+            ]
+        ),
     });
 
-    editor.on('loaderror', console.log);
+    editor.on('loaderror', (err) => {
+        console.log('load error', err);
+    });
 
     editor.on('load', (res) => {
         console.log('load', res);
