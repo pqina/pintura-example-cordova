@@ -76,6 +76,29 @@ function dataURIToBlob(dataURI) {
     return new Blob([ab], { type: mimeString });
 }
 
+function fileUrlToBlob(url) {
+    return new Promise((resolve, reject) => {
+        window.resolveLocalFileSystemURL(
+            url,
+            (entry) => {
+                entry.file((file) => {
+                    const reader = new FileReader();
+                    reader.onerror = reject;
+                    reader.onloadend = () => {
+                        resolve(
+                            new Blob([reader.result], {
+                                type: file.type,
+                            })
+                        );
+                    };
+                    reader.readAsArrayBuffer(file);
+                }, reject);
+            },
+            reject
+        );
+    });
+}
+
 function setupEventHandlers() {
     console.log('Setting up event handlers');
 
@@ -152,13 +175,17 @@ function setupEventHandlers() {
         //     }
         // );
 
-        console.log('Select video from photo library');
+        console.log('Select video from media library');
 
         navigator.camera.getPicture(
             (url) => {
                 console.log('success url', url);
 
-                editMedia(url);
+                fileUrlToBlob(url).then((blob) => {
+                    console.log('success blob', blob.type, blob.size);
+
+                    editMedia(blob);
+                });
             },
             (err) => {
                 console.log('error', err);
@@ -185,7 +212,11 @@ function setupEventHandlers() {
 
         navigator.camera.getPicture(
             (url) => {
-                editMedia(url);
+                fileUrlToBlob(url).then((blob) => {
+                    console.log('success blob', blob.type, blob.size);
+
+                    editMedia(blob);
+                });
             },
             (err) => {
                 console.log('error', err);
